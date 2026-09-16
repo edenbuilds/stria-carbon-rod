@@ -194,14 +194,13 @@
   max-width: 48ch;
 }
 
-.scrub-stage {
+.build-stage {
   position: relative;
   min-height: 100svh;
-  border-top: 1px solid var(--color-linen-mist);
-  background: #f4f4f4;
+  background: var(--color-paper-white);
 }
 
-.scrub-stage__inner {
+.build-stage__inner {
   position: relative;
   z-index: 1;
   min-height: 100svh;
@@ -209,27 +208,26 @@
   grid-template-rows: 1fr auto;
   align-items: center;
   justify-items: center;
-  gap: var(--spacing-20);
-  padding-block: var(--spacing-40);
+  gap: var(--spacing-24);
+  padding-block: var(--spacing-32);
 }
 
-.scrub-canvas {
-  width: min(100%, 960px);
-  height: min(64svh, 560px);
+.build-canvas {
+  width: min(100%, 1100px);
+  height: min(72svh, 620px);
   display: block;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--color-linen-mist);
-  background: #f4f4f4;
+  background: transparent;
 }
 
-.scrub-caption {
+.build-caption {
   margin: 0;
   min-height: 1.5em;
   font-size: var(--text-caption);
   line-height: var(--leading-caption);
-  color: var(--color-anodized-graphite);
+  color: var(--color-brushed-steel);
   text-align: center;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .band {
@@ -285,28 +283,67 @@
 .site-footer {
   border-top: 1px solid var(--color-linen-mist);
   background: var(--color-paper-white);
+  padding-top: var(--spacing-76);
+  padding-bottom: var(--spacing-40);
 }
 
-.site-footer__inner {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-20);
-  justify-content: space-between;
-  align-items: center;
-  padding-block: var(--spacing-32);
+.site-footer__grid {
+  display: grid;
+  gap: var(--spacing-40);
+}
+
+.site-footer__brand .wordmark {
+  margin: 0 0 12px;
+}
+
+.site-footer__tag {
+  margin: 0;
+  max-width: 28ch;
   font-size: var(--text-caption);
   line-height: var(--leading-caption);
   color: var(--color-brushed-steel);
 }
 
-.site-footer__links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-24);
+.site-footer__col {
+  display: grid;
+  gap: 10px;
+  align-content: start;
 }
 
-.site-footer__links a:hover {
+.site-footer__col a,
+.site-footer__col span {
+  font-size: var(--text-caption);
+  line-height: var(--leading-caption);
+  color: var(--color-anodized-graphite);
+}
+
+.site-footer__col a:hover {
   color: var(--color-obsidian);
+}
+
+.site-footer__label {
+  margin: 0 0 4px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-obsidian);
+}
+
+.site-footer__bottom {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--spacing-16);
+  margin-top: var(--spacing-40);
+  padding-top: var(--spacing-24);
+  border-top: 1px solid var(--color-aluminum-hairline);
+  font-size: var(--text-caption);
+  line-height: var(--leading-caption);
+  color: var(--color-brushed-steel);
+}
+
+.site-footer__inner {
+  display: none;
 }
 
 @media (min-width: 900px) {
@@ -343,8 +380,13 @@
     grid-template-columns: minmax(0, 1fr) auto;
   }
 
-  .scrub-canvas {
-    height: min(68svh, 580px);
+  .site-footer__grid {
+    grid-template-columns: 1.4fr 1fr 1fr 1fr;
+    gap: var(--spacing-32);
+  }
+
+  .build-canvas {
+    height: min(74svh, 640px);
   }
 }
 
@@ -358,7 +400,8 @@
   }
 
   .wordmark {
-    font-size: 13px;
+    font-size: 12px;
+    letter-spacing: 0.06em;
   }
 
   .ghost-pill {
@@ -367,8 +410,8 @@
   }
 
   .hero {
-    padding-top: 24px;
-    padding-bottom: 64px;
+    padding-top: 20px;
+    padding-bottom: 56px;
   }
 
   .hero__layout {
@@ -377,12 +420,12 @@
 
   .hero__media img {
     aspect-ratio: 4 / 5;
-    object-position: 50% 35%;
+    object-position: 48% 32%;
   }
 
   .feature-heading,
   .heading {
-    max-width: 16ch;
+    max-width: 15ch;
     font-size: clamp(26px, 8vw, 34px);
   }
 
@@ -391,17 +434,29 @@
     padding-block: 72px;
   }
 
-  .scrub-stage__inner {
-    padding-block: var(--spacing-32);
+  .build-stage__inner {
+    padding-block: var(--spacing-24);
   }
 
-  .scrub-canvas {
-    height: min(50svh, 380px);
+  .build-canvas {
+    height: min(52svh, 400px);
+  }
+
+  .site-footer {
+    padding-top: 56px;
+  }
+
+  .site-footer__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .site-footer__brand {
+    grid-column: 1 / -1;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .scrub-caption {
+  .build-caption {
     opacity: 1 !important;
   }
 }
