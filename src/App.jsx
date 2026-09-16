@@ -44,7 +44,7 @@ function Loader({ progress, done }) {
           className="loader"
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.45 }}
           aria-busy="true"
         >
           <p className="loader__mark">COMPOSITE SPEED®</p>
@@ -56,7 +56,7 @@ function Loader({ progress, done }) {
             aria-valuenow={Math.round(progress)}
             aria-label="Loading"
           >
-            <div className="loader__bar" style={{ width: `${Math.max(progress, 8)}%` }} />
+            <div className="loader__bar" style={{ width: `${Math.max(progress, 6)}%` }} />
           </div>
         </motion.div>
       )}
@@ -64,90 +64,107 @@ function Loader({ progress, done }) {
   )
 }
 
+function loadImage(src) {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.decoding = 'async'
+    img.onload = () => resolve(true)
+    img.onerror = () => resolve(false)
+    img.src = src
+  })
+}
+
 export default function App() {
   const reduceMotion = useReducedMotion()
   const [loadProgress, setLoadProgress] = useState(0)
   const [assetsReady, setAssetsReady] = useState(false)
+  const [activeSrc, setActiveSrc] = useState(frameSrc(1))
   const [stageCaption, setStageCaption] = useState(captionForFrame(1))
+  const [isMobile, setIsMobile] = useState(false)
 
-  const framesRef = useRef([])
   const scrubRef = useRef(null)
-  const canvasRef = useRef(null)
-  const stageInnerRef = useRef(null)
   const progressObj = useRef({ frame: 1 })
+  const lastDrawn = useRef(0)
+  const readyFrames = useRef(new Set([1]))
 
   const frameUrls = useMemo(
     () => Array.from({ length: FRAME_COUNT }, (_, i) => frameSrc(i + 1)),
     [],
   )
 
-  const drawFrame = (index) => {
-    const canvas = canvasRef.current
-    const frames = framesRef.current
-    if (!canvas || !frames.length) return
-    const img = frames[index - 1]
-    if (!img || !img.complete || !img.naturalWidth) return
-
-    const ctx = canvas.getContext('2d')
-    const dpr = Math.min(window.devicePixelRatio || 1, 2)
-    const cssW = canvas.clientWidth
-    const cssH = canvas.clientHeight
-    if (cssW < 2 || cssH < 2) return
-
-    const nextW = Math.floor(cssW * dpr)
-    const nextH = Math.floor(cssH * dpr)
-    if (canvas.width !== nextW || canvas.height !== nextH) {
-      canvas.width = nextW
-      canvas.height = nextH
+  const showFrame = (index) => {
+    const clamped = Math.max(1, Math.min(FRAME_COUNT, index))
+    // Prefer a loaded frame so mobile never flashes blanks
+    let target = clamped
+    if (!readyFrames.current.has(target)) {
+      let found = 1
+      for (const ready of readyFrames.current) {
+        if (Math.abs(ready - clamped) < Math.abs(found - clamped)) found = ready
+      }
+      target = found
     }
-
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-    ctx.fillStyle = '#ffffff'
-    ctx.fillRect(0, 0, cssW, cssH)
-
-    const scale = Math.min(cssW / img.naturalWidth, cssH / img.naturalHeight)
-    const w = img.naturalWidth * scale
-    const h = img.naturalHeight * scale
-    ctx.drawImage(img, (cssW - w) / 2, (cssH - h) / 2, w, h)
+    if (target === lastDrawn.current) {
+      setStageCaption(captionForFrame(clamped))
+      return
+    }
+    lastDrawn.current = target
+    setActiveSrc(frameSrc(target))
+    setStageCaption(captionForFrame(clamped))
   }
 
   useEffect(() => {
-    let cancelled = false
-    const images = new Array(FRAME_COUNT)
+    const mq = window.matchMedia('(max-width: 720px)')
+    const sync = () => setIsMobile(mq.matches)
+    sync()
+    mq.addEventListener('change', sync)
+    return () => mq.removeEventListener('change', sync)
+  }, [])
 
-    const loadImage = (src) =>
-      new Promise((resolve) => {
-        const img = new Image()
-        img.decoding = 'async'
-        img.onload = () => resolve(img)
-        img.onerror = () => resolve(img)
-        img.src = src
-      })
+  useEffect(() => {
+    let cancelled = false
 
     ;(async () => {
       await loadImage(BIKE.webp)
       if (cancelled) return
       setLoadProgress(8)
 
-      // Priority-load early frames so the stage can start immediately
-      const priority = 24
-      for (let i = 0; i < priority; i += 1) {
-        images[i] = await loadImage(frameUrls[i])
-        if (cancelled) return
-        setLoadProgress(8 + ((i + 1) / FRAME_COUNT) * 92)
-      }
+      // First frame must paint before we reveal — then warm the rest in parallel
+      const firstOk = await loadImage(frameUrls[0])
+      if (cancelled) return
+      if (firstOk) readyFrames.current.add(1)
+      showFrame(1)
+      setLoadProgress(18)
 
-      framesRef.current = images
-      setLoadProgress(35)
+      // Warm a small head batch so early scroll is solid
+      const head = frameUrls.slice(1, 12)
+      await Promise.all(
+        head.map(async (src, i) => {
+          const ok = await loadImage(src)
+          if (ok) readyFrames.current.add(i + 2)
+        }),
+      )
+      if (cancelled) return
+      setLoadProgress(42)
       setAssetsReady(true)
 
-      // Continue loading the rest in the background
-      for (let i = priority; i < FRAME_COUNT; i += 1) {
-        images[i] = await loadImage(frameUrls[i])
+      // Remaining frames in parallel batches (does not block UI)
+      const rest = frameUrls.slice(12)
+      const batchSize = 8
+      for (let i = 0; i < rest.length; i += batchSize) {
         if (cancelled) return
-        framesRef.current = images
-        setLoadProgress(35 + ((i + 1 - priority) / (FRAME_COUNT - priority)) * 65)
+        const batch = rest.slice(i, i + batchSize)
+        await Promise.all(
+          batch.map(async (src, j) => {
+            const frameIndex = 13 + i + j
+            const ok = await loadImage(src)
+            if (ok) readyFrames.current.add(frameIndex)
+          }),
+        )
+        if (cancelled) return
+        const done = 12 + Math.min(i + batch.length, rest.length)
+        setLoadProgress(42 + (done / FRAME_COUNT) * 58)
       }
+
       if (!cancelled) setLoadProgress(100)
     })()
 
@@ -156,64 +173,52 @@ export default function App() {
     }
   }, [frameUrls])
 
-  useEffect(() => {
-    if (!assetsReady) return
-    const paint = () => drawFrame(reduceMotion ? FRAME_COUNT : 1)
-    paint()
-    const id = window.requestAnimationFrame(paint)
-    return () => window.cancelAnimationFrame(id)
-  }, [assetsReady, reduceMotion])
-
   useGSAP(
     () => {
       if (reduceMotion || !assetsReady) return
       const stage = scrubRef.current
-      const inner = stageInnerRef.current
       if (!stage) return
 
       progressObj.current.frame = 1
-      drawFrame(1)
-      setStageCaption(captionForFrame(1))
-      if (inner) gsap.set(inner, { opacity: 0.35, y: 40 })
+      showFrame(1)
 
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: stage,
-          start: 'top 70%',
-          end: '+=4200',
-          pin: true,
-          pinSpacing: true,
-          scrub: 0.85,
-          anticipatePin: 1,
-          invalidateOnRefresh: true,
-          onRefresh: () => drawFrame(Math.round(progressObj.current.frame)),
+      const mobile = window.matchMedia('(max-width: 720px)').matches
+
+      // Mobile: CSS sticky section + scrub without pin (pin blanks on iOS)
+      // Desktop: classic pinned scrub
+      const trigger = {
+        trigger: stage,
+        start: 'top top',
+        end: mobile ? 'bottom bottom' : '+=3600',
+        scrub: mobile ? 0.2 : 0.75,
+        invalidateOnRefresh: true,
+        fastScrollEnd: true,
+        ...(mobile
+          ? {}
+          : {
+              pin: true,
+              pinSpacing: true,
+              anticipatePin: 1,
+            }),
+      }
+
+      const tl = gsap.timeline({ scrollTrigger: trigger })
+
+      tl.to(progressObj.current, {
+        frame: FRAME_COUNT,
+        ease: 'none',
+        duration: 1,
+        onUpdate: () => {
+          showFrame(Math.round(progressObj.current.frame))
         },
       })
 
-      tl.to(inner, { opacity: 1, y: 0, ease: 'none', duration: 0.12 }, 0)
-        .to(
-          progressObj.current,
-          {
-            frame: FRAME_COUNT,
-            ease: 'none',
-            duration: 1,
-            onUpdate: () => {
-              const f = Math.round(progressObj.current.frame)
-              const img = framesRef.current[f - 1]
-              if (img?.complete) {
-                setStageCaption(captionForFrame(f))
-                drawFrame(f)
-              }
-            },
-          },
-          0.08,
-        )
-
-      const onResize = () => {
-        drawFrame(Math.round(progressObj.current.frame))
-        ScrollTrigger.refresh()
-      }
+      const onResize = () => ScrollTrigger.refresh()
       window.addEventListener('resize', onResize)
+      requestAnimationFrame(() => {
+        showFrame(1)
+        ScrollTrigger.refresh()
+      })
 
       return () => {
         window.removeEventListener('resize', onResize)
@@ -221,7 +226,7 @@ export default function App() {
         tl.kill()
       }
     },
-    { dependencies: [assetsReady, reduceMotion], revertOnUpdate: true },
+    { dependencies: [assetsReady, reduceMotion, isMobile], revertOnUpdate: true },
   )
 
   return (
@@ -300,15 +305,26 @@ export default function App() {
           </div>
         </section>
 
-        <section className="build-stage" id="build" ref={scrubRef} aria-label="Seatpost assembly">
-          <div className="build-stage__inner shell" ref={stageInnerRef}>
-            <canvas
-              className="build-canvas"
-              ref={canvasRef}
-              role="img"
-              aria-label="Composite Speed seatpost assembly"
-            />
-            <p className="build-caption">{stageCaption}</p>
+        <section
+          className={`build-stage${isMobile ? ' build-stage--mobile' : ''}`}
+          id="build"
+          ref={scrubRef}
+          aria-label="Seatpost assembly"
+        >
+          <div className="build-stage__sticky">
+            <div className="build-stage__inner shell">
+              <img
+                className="build-image"
+                src={activeSrc}
+                alt="Composite Speed seatpost assembly"
+                width={1280}
+                height={720}
+                decoding="async"
+                fetchPriority="high"
+                draggable={false}
+              />
+              <p className="build-caption">{stageCaption}</p>
+            </div>
           </div>
         </section>
 

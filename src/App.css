@@ -200,9 +200,31 @@
   background: var(--color-paper-white);
 }
 
+/* Mobile: tall scroll runway + sticky viewport (avoids GSAP pin blanks on iOS) */
+.build-stage--mobile {
+  min-height: 0;
+  height: 280vh;
+}
+
+.build-stage__sticky {
+  position: relative;
+  min-height: 100svh;
+}
+
+.build-stage--mobile .build-stage__sticky {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  background: var(--color-paper-white);
+}
+
 .build-stage__inner {
   position: relative;
   z-index: 1;
+  width: 100%;
   min-height: 100svh;
   display: grid;
   grid-template-rows: 1fr auto;
@@ -212,11 +234,22 @@
   padding-block: var(--spacing-32);
 }
 
-.build-canvas {
+.build-stage--mobile .build-stage__inner {
+  min-height: 0;
+  height: 100%;
+  padding-block: var(--spacing-24);
+}
+
+.build-image {
   width: min(100%, 1100px);
   height: min(72svh, 620px);
+  max-height: min(72svh, 620px);
   display: block;
+  object-fit: contain;
+  object-position: center;
   background: transparent;
+  /* Beat global img { height: auto } so the stage never collapses blank */
+  max-width: 100%;
 }
 
 .build-caption {
@@ -385,8 +418,9 @@
     gap: var(--spacing-32);
   }
 
-  .build-canvas {
+  .build-image {
     height: min(74svh, 640px);
+    max-height: min(74svh, 640px);
   }
 }
 
@@ -438,8 +472,10 @@
     padding-block: var(--spacing-24);
   }
 
-  .build-canvas {
-    height: min(52svh, 400px);
+  .build-image {
+    height: min(56svh, 420px);
+    max-height: min(56svh, 420px);
+    width: 100%;
   }
 
   .site-footer {

@@ -69,6 +69,11 @@ img {
   height: auto;
 }
 
+/* Explicit stage images keep a fixed viewport box on mobile */
+img.build-image {
+  height: min(72svh, 620px);
+}
+
 a {
   color: inherit;
   text-decoration: none;
