@@ -1,51 +1,28 @@
-# STRIA — Carbon Fibre Seatpost
+# STRIA® — Carbon Fibre Seatpost
 
-Cinematic scroll microsite for a carbon fibre seatpost, built from the [cinematic-scroll-prompt-kit](https://github.com/amirmushichge/cinematic-scroll-prompt-kit) contract.
+White, achromatic product gallery with GSAP ScrollTrigger scrubbing and Framer Motion UI motion. Built from the Custo style system (paper-white canvas).
 
-## Run locally
-
-```bash
-npm start
-```
-
-Then open the printed localhost URL (defaults to `http://127.0.0.1:4173`).
-
-Or serve the project root with any static server:
+## Run
 
 ```bash
-npx --yes serve -l 4173 .
+npm install
+npm run dev
 ```
 
-## Live preview
+## Build
 
-- Site: https://stria-carbon-rod.vercel.app
-- Repo: https://github.com/edenbuilds/stria-carbon-rod
+```bash
+npm run build
+npm run preview
+```
 
-## Project inputs
+## Stack
 
-| File | Role |
-| --- | --- |
-| `PROJECT_BRIEF.md` | Product / narrative brief |
-| `assets.json` | Layer manifest |
-| `cinematic-build-brief/PROMPT.txt` | Kit implementation contract |
-| `public/assets/` | Product photography |
+- React + Vite
+- GSAP + ScrollTrigger (`@gsap/react`) for pinned product scrub near the CTA
+- Framer Motion for header/hero/button motion
+- Single product image: bike seatpost in situ (`public/assets/20-context-bike.webp`)
 
-## Timeline map
+## Design
 
-| Progress | Beat |
-| --- | --- |
-| `0.00–0.03` | Hero hold — bike context + STRIA lockup |
-| `0.03–0.18` | Intro exits |
-| `0.12–0.26` | Push-in toward the carbon shaft |
-| `0.24–0.36` | Narrative A — clamp geometry |
-| `0.38–0.50` | Exploded engineering reveal |
-| `0.48–0.62` | Narrative B — 3K weave |
-| `0.70–0.78` | World refocus on assembled rod |
-| `0.74–0.96` | Spec catalog enters |
-| `0.91–1.00` | Catalog controls settle |
-
-## Notes
-
-- Source assets are studio stills on white, not pre-cut transparent depth layers. Atmosphere / frame / tint roles are CSS.
-- No GSAP / Lenis / Three.js — native scroll + `requestAnimationFrame` + CSS custom properties.
-- `prefers-reduced-motion` disables parallax/smoothing and presents a readable stacked flow.
+Custo tokens on a **white** background: Manrope substitute for PP Neue Montreal, ghost pill CTAs, hairline borders, 57px display wordmark, 110px section gaps. No chromatic accents.
