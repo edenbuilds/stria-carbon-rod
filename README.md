@@ -16,6 +16,11 @@ Or serve the project root with any static server:
 npx --yes serve -l 4173 .
 ```
 
+## Live preview
+
+- Site: https://stria-carbon-rod.vercel.app
+- Repo: https://github.com/edenbuilds/stria-carbon-rod
+
 ## Project inputs
 
 | File | Role |
