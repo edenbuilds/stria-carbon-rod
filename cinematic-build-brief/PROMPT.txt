@@ -1,0 +1,311 @@
+You are a senior creative frontend engineer and motion systems designer.
+
+Build a production-quality scroll-driven cinematic microsite from the supplied brief, copy, visual references, and layered image assets.
+
+PROJECT INPUTS
+
+- Project name: {{PROJECT_NAME}}
+- Subject, destination, or brand: {{SUBJECT}}
+- Primary message: {{PRIMARY_MESSAGE}}
+- Audience: {{AUDIENCE}}
+- Visual direction: {{VISUAL_DIRECTION}}
+- Required narrative beats: {{NARRATIVE_BEATS}}
+- Final interaction or CTA: {{CTA}}
+- Asset directory: {{ASSET_DIRECTORY}}
+- Reference screencast or screenshots: {{REFERENCE_MEDIA}}
+- Preferred implementation: {{VANILLA_HTML_CSS_JS_OR_EXISTING_STACK}}
+
+CORE EXPERIENCE
+
+Create one continuous 2.5D cinematic scene controlled by vertical scrolling.
+
+Do not build a conventional stack of unrelated full-screen sections. Do not use a prerecorded video as the visual timeline. Use one long scroll container and one pinned or sticky viewport-height stage. Compose aligned depth layers inside the stage and map scroll progress to transforms, opacity, blur, brightness, saturation, masks, and narrative text.
+
+The experience should feel like a camera moving through one coherent world:
+
+1. Establishing hero composition.
+2. Slow push-in while the opening title and copy leave.
+3. A foreground object opens, separates, or moves around the viewer.
+4. A focused narrative panel appears inside the newly revealed negative space.
+5. The foreground exits and reveals a clean panoramic scene.
+6. A second narrative beat appears over a subtly blurred or tinted background.
+7. The world returns to focus.
+8. A horizontal catalog, itinerary, product list, or card rail enters over the same scene.
+9. The final state remains interactive.
+
+FIRST: INSPECT, THEN IMPLEMENT
+
+Before changing files:
+
+- Inspect the repository and identify its current stack, scripts, conventions, and existing user changes.
+- Inspect every supplied image: dimensions, alpha channel, visible bounding box, intended depth, likely anchor point, and whether it is a background plate, midground, hero object, split foreground, edge occluder, or unused source.
+- Inspect the reference media and create a concise scene map before coding.
+- Reuse the existing stack when sensible. Do not add a framework or animation library only for convenience.
+- Preserve unrelated work.
+- If an asset is missing, create a clearly named placeholder layer and continue. List all missing production assets in the final handoff.
+
+ART DIRECTION
+
+- Prioritize large editorial composition, calm pacing, restrained typography, and one dominant visual idea.
+- Keep navigation and copy minimal.
+- Use a refined display serif or supplied brand typeface for major headlines and a highly readable sans serif for interface text.
+- Keep all text, navigation, buttons, and cards as semantic HTML. Never bake UI or copy into images.
+- Avoid generic gradient-heavy startup aesthetics.
+- Avoid excessive glassmorphism, neon glow, random floating objects, and animation that does not reinforce depth.
+- Preserve the source photography or illustration. Do not cover it with unnecessary UI.
+- Establish explicit design tokens for ink, paper, background, tint, spacing, radii, shadows, and type scale.
+
+ASSET CONTRACT
+
+Expect or create a documented manifest for these roles:
+
+- 00 background or sky plate: opaque, full canvas.
+- 10 distant landscape: transparent top, aligned to the same horizon.
+- 20 midground environment: city, terrain, water, room, product environment, or equivalent.
+- 30 hero object: isolated transparent PNG or WebP with enough surrounding canvas for zoom.
+- 40 foreground-left occluder.
+- 41 foreground-right occluder.
+- 50 optional edge frame or portal layer.
+- Optional texture, haze, grain, shadow, or tint overlays.
+
+All visual layers must:
+
+- Share one camera, perspective, light direction, color grade, and master aspect ratio.
+- Contain 10–20% bleed beyond the visible frame wherever motion may expose an edge.
+- Use clean straight alpha with no white or black halo.
+- Have stable bottom and center anchors.
+- Contain no text.
+- Be optimized for the web while retaining a high-resolution master.
+- Include width and height attributes or an equivalent aspect-ratio reservation to prevent layout shift.
+
+If the provided layers do not align, fix positioning and cropping in CSS where possible. Do not hide fundamental mismatches with extreme blur. Report any asset that genuinely requires recompositing.
+
+PAGE ARCHITECTURE
+
+Use a structure equivalent to:
+
+main
+  section.cinematic-scroll
+    div.cinematic-stage
+      div.world
+        background layers
+        midground group
+        hero and foreground layers
+        tint or shade overlay
+        persistent header
+      intro copy
+      narrative panel A
+      narrative panel B
+      final interactive catalog
+
+The scroll section should provide a configurable virtual timeline, typically 3,600–5,000 CSS pixels on desktop.
+
+The stage should use:
+
+- position: sticky;
+- top: 0;
+- a min-height based on 100svh or 100dvh with a robust fallback;
+- overflow: clip or hidden;
+- isolation: isolate.
+
+Use explicit z-index bands and document them:
+
+- 0–9: world and background.
+- 10–19: tint and cinematic framing.
+- 20–29: narrative copy.
+- 30–39: navigation and controls.
+- 40+: overlays or modals when required.
+
+SCROLL ENGINE
+
+Implement a small deterministic timeline.
+
+Requirements:
+
+- Derive local scroll distance from the cinematic section, not global page scroll.
+- Clamp it between zero and the section’s maximum travel.
+- Expose normalized progress p from 0 to 1.
+- Keep scene boundaries in one readable configuration object.
+- Provide helpers such as clamp(), lerp(), smoothstep(), rangeProgress(), and segmentInOut().
+- Update rendering through requestAnimationFrame.
+- Scroll, resize, and pointer listeners should request a frame instead of performing heavy work directly.
+- Use passive listeners where possible.
+- Smooth the visual playhead toward the target only when reduced motion is not requested.
+- Smooth pointer input separately.
+- Stop requesting frames once values have converged.
+- Write a small set of CSS custom properties and let CSS own final transforms and styles.
+- Use transform and opacity for most motion.
+- Avoid repeatedly triggering synchronous layout inside the frame loop.
+- Cache stable geometry and recompute it on resize or when assets finish loading.
+
+Suggested normalized timeline:
+
+- 0.00–0.03: hero hold.
+- 0.03–0.18: hero title and intro copy exit.
+- 0.15–0.25: foreground split, portal movement, and hero push-in.
+- 0.25–0.35: narrative A hold.
+- 0.35–0.44: narrative A and foreground exit.
+- 0.44–0.48: clean panorama hold.
+- 0.48–0.58: narrative B enter.
+- 0.58–0.69: narrative B hold.
+- 0.69–0.74: narrative B exit and world refocus.
+- 0.75–0.96: catalog enters horizontally.
+- 0.91–1.00: catalog controls appear and the final state settles.
+
+Treat these ranges as motion direction, not immutable magic numbers. Tune them against the supplied reference and viewport.
+
+DEPTH AND MOTION RULES
+
+- Background motion must be smallest.
+- Midground motion must be slightly larger.
+- Hero and foreground motion may be largest.
+- Pointer parallax should remain subtle, normally no more than 6–24 pixels at the extrema.
+- Use opposing pointer directions between far and near layers to imply depth.
+- Use transform-origin deliberately for every layer.
+- Never expose an empty canvas edge during scale or parallax.
+- Blur should support focus transitions, not become permanent fog.
+- Keep blur at or below the minimum needed for text legibility.
+- Provide a cheaper tint or opacity fallback for low-power devices.
+- Pair blur with restrained brightness and tint changes so text remains readable.
+- Preserve the composition during interpolation. The subject must not drift accidentally.
+
+NARRATIVE TEXT
+
+- Each narrative panel needs a clear headline, concise body, and optional facts or CTA.
+- Animate text independently from image layers.
+- Use opacity plus a small translation, not large flying text.
+- Ensure sufficient contrast without destroying the image.
+- Keep line lengths controlled and type fluid with clamp().
+- Do not show multiple narrative panels simultaneously unless the overlap is intentional.
+
+FINAL CATALOG OR SLIDER
+
+Build an interactive horizontal card rail in the final scene.
+
+Requirements:
+
+- Previous and next controls.
+- Mouse, touch drag or swipe, and keyboard support.
+- Visible focus states.
+- Cards must use semantic links or buttons according to their real behavior.
+- If infinite looping is used, clone enough content to hide the seam and normalize the index without animation after crossing a clone boundary.
+- Duplicate clones must be aria-hidden and removed from the tab order.
+- Announce the active item or position accessibly without excessive screen-reader chatter.
+- Do not make a card look clickable if it has no action.
+- If the rail lives inside a scaled world group, compensate its scale and screen position so the UI remains a stable, readable size.
+
+RESPONSIVE BEHAVIOR
+
+Design and test at minimum:
+
+- 1440 × 900 desktop.
+- 1280 × 720 laptop.
+- 1024 × 768 tablet landscape.
+- 768 × 1024 tablet portrait.
+- 390 × 844 mobile.
+
+On smaller screens:
+
+- Use 100svh or 100dvh-aware sizing and safe-area padding.
+- Preserve the main subject instead of blindly applying desktop object-position.
+- Reduce headline size and text width.
+- Reduce pointer-driven movement or disable it for coarse pointers.
+- Shorten or normalize scroll travel if the experience becomes exhausting.
+- Ensure cards are swipeable and controls remain reachable.
+- Prevent horizontal page overflow.
+- Never allow navigation to cover critical copy.
+
+ACCESSIBILITY AND MOTION SAFETY
+
+- Use semantic landmarks, headings, navigation, buttons, and lists.
+- Decorative images should have empty alt text. Meaningful images require useful alt text.
+- All controls must be keyboard reachable and visibly focused.
+- Provide a genuine prefers-reduced-motion mode:
+  - Disable inertial playhead smoothing and pointer parallax.
+  - Remove aggressive zoom, blur, and lateral travel.
+  - Use brief crossfades or present a static hero followed by normal-flow content.
+  - Keep all information and interactions available.
+- Check contrast and browser zoom at 200%.
+- Do not trap scrolling.
+
+LOADING AND PERFORMANCE
+
+- Preload only the critical hero layers and the font used above the fold.
+- Use image.decode() or an equivalent readiness barrier before revealing the composed stage.
+- Show a simple branded loading state only when necessary.
+- Lazy-load assets that cannot appear until late in the timeline.
+- Supply responsive image candidates when useful.
+- Prefer optimized WebP or AVIF for large photographic layers and PNG only when its alpha quality is required.
+- Do not ship 4K masters unchanged to every device.
+- Prevent layout shifts.
+- Keep the console clean.
+- Measure load size, frame stability, and expensive paints.
+- Avoid continuously animating when the stage is offscreen.
+
+INTERACTION INTEGRITY
+
+- Every navigation link must target a real section or timeline marker.
+- If navigation jumps to a timeline beat, compute the corresponding scroll position and use reduced-motion-safe scrolling.
+- Every visible button must have an implemented action.
+- Do not leave placeholder labels, dead controls, or fake language switchers in the finished version.
+
+IMPLEMENTATION QUALITY
+
+- Prefer small descriptive modules or functions instead of one unstructured update() function when the codebase permits.
+- Keep timeline constants, selectors, state, measurement, render calculations, and event wiring logically separated.
+- Comment non-obvious coordinate compensation and infinite-loop normalization, not every line.
+- Use a data-driven scene configuration where possible.
+- Keep content editable without touching animation math.
+- Do not introduce GSAP, Lenis, Three.js, or another dependency unless it already exists or materially solves a requirement. If you add one, explain why.
+
+QA CHECKPOINTS
+
+Capture or inspect the stage at approximately:
+
+- p = 0.00: complete hero.
+- p = 0.18: intro has exited cleanly.
+- p = 0.27: narrative A is readable inside the foreground frame.
+- p = 0.44: the transition reveals the panorama with no holes.
+- p = 0.58: narrative B is readable.
+- p = 0.74: the clean world is restored.
+- p = 0.90: the catalog is mostly entered.
+- p = 1.00: the final interactive state is stable.
+
+At every checkpoint verify:
+
+- No transparent holes or unpainted edges.
+- No accidental layer-order changes.
+- No text collisions.
+- No abrupt opacity pops.
+- No asset stretching.
+- No critical subject cropping.
+- No visible loading flashes.
+- No horizontal document overflow.
+
+Test scrolling both downward and upward. The timeline must be fully reversible and deterministic.
+
+DELIVERABLES
+
+1. Working source in the existing project.
+2. A short README with the local run command.
+3. An asset manifest describing the role, dimensions, anchor, and depth of every layer.
+4. A concise timeline map.
+5. A note listing placeholders or assets that still require production work.
+6. Verification results for desktop, tablet, mobile, keyboard navigation, reduced motion, and console errors.
+
+DEFINITION OF DONE
+
+The result is complete when:
+
+- The first screen reads as one polished editorial composition.
+- Scrolling feels like camera choreography through the same world.
+- Every narrative beat has a clear enter, hold, and exit.
+- Reversing scroll reverses every visual state cleanly.
+- The final catalog is genuinely usable.
+- Mobile and reduced-motion versions preserve all content.
+- Assets load without disruptive popping.
+- There are no dead controls or broken anchors.
+- Performance remains smooth on a normal laptop and acceptable on a modern phone.
+- Another developer can understand, retime, or replace the art without reverse-engineering the entire implementation.
+
+Do not stop at a rough scaffold. Implement the experience, run it, inspect every key scroll checkpoint, fix visible defects, and provide a concise handoff.

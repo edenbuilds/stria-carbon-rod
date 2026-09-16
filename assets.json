@@ -1,0 +1,90 @@
+{
+  "schemaVersion": "1.0",
+  "scene": "stria-carbon-rod",
+  "aspectRatio": "studio-product",
+  "masterCanvas": {
+    "width": 1800,
+    "height": 1500,
+    "notes": "Source stills are product plates on white, not pre-aligned depth cutouts. CSS atmosphere layers provide background/tint/occluder roles."
+  },
+  "layers": [
+    {
+      "id": "studioPlate",
+      "role": "opaque-background",
+      "file": "css: .layer--studio",
+      "width": null,
+      "height": null,
+      "anchor": "center",
+      "depth": 0,
+      "critical": true,
+      "notes": "Procedural cool studio gradient + soft floor shadow"
+    },
+    {
+      "id": "atmosphere",
+      "role": "distant-landscape",
+      "file": "css: .layer--haze",
+      "anchor": "center",
+      "depth": 0.15,
+      "critical": true,
+      "notes": "Soft vignette / paper grain substitute"
+    },
+    {
+      "id": "contextBike",
+      "role": "environment-midground",
+      "file": "public/assets/20-context-bike.webp",
+      "fallback": "public/assets/20-context-bike.jpg",
+      "width": 1800,
+      "height": 1500,
+      "anchor": "center",
+      "transformOrigin": "48% 42%",
+      "depth": 0.45,
+      "critical": true
+    },
+    {
+      "id": "heroRod",
+      "role": "isolated-hero-object",
+      "file": "public/assets/30-hero-rod.webp",
+      "fallback": "public/assets/30-hero-rod.jpg",
+      "width": 1600,
+      "height": 1600,
+      "anchor": "center",
+      "transformOrigin": "50% 42%",
+      "depth": 0.7,
+      "critical": true
+    },
+    {
+      "id": "exploded",
+      "role": "engineering-reveal",
+      "file": "public/assets/35-exploded.webp",
+      "fallback": "public/assets/35-exploded.jpg",
+      "width": 1600,
+      "height": 1600,
+      "anchor": "center",
+      "transformOrigin": "50% 48%",
+      "depth": 0.75,
+      "critical": true
+    },
+    {
+      "id": "focusFrame",
+      "role": "optional-edge-frame",
+      "file": "css: .layer--frame",
+      "anchor": "center",
+      "depth": 0.95,
+      "critical": false,
+      "notes": "Animated portal / focus aperture via clip-path"
+    },
+    {
+      "id": "tint",
+      "role": "tint-overlay",
+      "file": "css: .layer--tint",
+      "anchor": "center",
+      "depth": 0.98,
+      "critical": true
+    }
+  ],
+  "missingProductionAssets": [
+    "Aligned transparent PNG cutouts for true 2.5D depth stacking",
+    "Separate foreground-left / foreground-right occluders",
+    "Dedicated sky / room plate beyond studio white"
+  ]
+}

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>STRIA — Carbon Fibre Seatpost</title>
+    <meta
+      name="description"
+      content="STRIA is a precision 3K carbon fibre seatpost. Scroll through clamp geometry, weave structure, and engineering specs."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="preload" as="image" href="public/assets/20-context-bike.webp" type="image/webp" />
+    <link rel="stylesheet" href="styles/main.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#catalog">Skip to specifications</a>
+
+    <div class="loader" data-loader aria-live="polite">
+      <div class="loader__mark">STRIA</div>
+      <p class="loader__copy">Composing the stage…</p>
+    </div>
+
+    <main>
+      <section
+        class="cinematic-scroll"
+        data-cinematic
+        data-scroll-travel="4200"
+        aria-label="STRIA carbon fibre seatpost cinematic experience"
+      >
+        <div class="cinematic-stage" data-stage>
+          <div class="world" data-world>
+            <div class="layer layer--studio" aria-hidden="true"></div>
+            <div class="layer layer--haze" data-depth="0.15" aria-hidden="true"></div>
+
+            <div class="layer layer--photo layer--context" data-layer="context" data-depth="0.45">
+              <picture>
+                <source srcset="public/assets/20-context-bike.webp" type="image/webp" />
+                <img
+                  src="public/assets/20-context-bike.jpg"
+                  alt="Carbon fibre seatpost installed on a matte gray road bike with a white racing saddle"
+                  width="1800"
+                  height="1500"
+                  decoding="async"
+                  data-critical
+                />
+              </picture>
+            </div>
+
+            <div class="layer layer--photo layer--hero" data-layer="hero" data-depth="0.7">
+              <picture>
+                <source srcset="public/assets/30-hero-rod.webp" type="image/webp" />
+                <img
+                  src="public/assets/30-hero-rod.jpg"
+                  alt="Isolated STRIA carbon fibre seatpost with matte black clamp and silver bolts"
+                  width="1600"
+                  height="1600"
+                  decoding="async"
+                  data-critical
+                />
+              </picture>
+            </div>
+
+            <div class="layer layer--photo layer--exploded" data-layer="exploded" data-depth="0.75">
+              <picture>
+                <source srcset="public/assets/35-exploded.webp" type="image/webp" />
+                <img
+                  src="public/assets/35-exploded.jpg"
+                  alt="Exploded view of the seatpost showing bolts, clamp plates, carbon tube, and end plug"
+                  width="1600"
+                  height="1600"
+                  decoding="async"
+                  data-lazy-late
+                />
+              </picture>
+            </div>
+
+            <div class="layer layer--frame" data-layer="frame" aria-hidden="true"></div>
+            <div class="layer layer--tint" data-layer="tint" aria-hidden="true"></div>
+
+            <header class="site-header">
+              <a class="brand" href="#top" data-jump="0">STRIA</a>
+              <nav class="site-nav" aria-label="Scene navigation">
+                <button type="button" data-jump="0.00">Origin</button>
+                <button type="button" data-jump="0.28">Clamp</button>
+                <button type="button" data-jump="0.52">Weave</button>
+                <button type="button" data-jump="0.88">Specs</button>
+              </nav>
+              <a class="header-cta" href="mailto:fit@stria.example?subject=STRIA%20fit%20guide">Fit guide</a>
+            </header>
+          </div>
+
+          <div class="copy-layer intro" data-copy="intro">
+            <p class="brand-lockup">STRIA</p>
+            <h1>Carbon, held.</h1>
+            <p class="lede">
+              A 3K weave seatpost built for stiffness where you need it and compliance where you sit.
+            </p>
+            <p class="scroll-hint" aria-hidden="true">Scroll to assemble the story</p>
+          </div>
+
+          <article class="copy-layer narrative narrative-a" data-copy="narrativeA">
+            <p class="eyebrow">Beat 01 · Interface</p>
+            <h2>Clamp geometry</h2>
+            <p>
+              Two-bolt rail cradle, machined head, and a side adjuster that keeps saddle angle honest under load.
+            </p>
+            <ul class="fact-list">
+              <li>CNC aluminum head</li>
+              <li>Hex hardware</li>
+              <li>Stable rail bite</li>
+            </ul>
+          </article>
+
+          <article class="copy-layer narrative narrative-b" data-copy="narrativeB">
+            <p class="eyebrow">Beat 02 · Material</p>
+            <h2>3K weave, clear coat</h2>
+            <p>
+              The checkerboard carbon is structural language — aligned fibers under a satin resin skin.
+            </p>
+            <ul class="fact-list">
+              <li>Hollow tube</li>
+              <li>Sealed end plug</li>
+              <li>Weave continuity</li>
+            </ul>
+          </article>
+
+          <section class="catalog" id="catalog" data-catalog aria-label="STRIA specifications">
+            <div class="catalog__head">
+              <p class="eyebrow">Specifications</p>
+              <h2>Built as a system</h2>
+            </div>
+
+            <div class="catalog__viewport">
+              <button class="catalog__nav catalog__nav--prev" type="button" data-catalog-prev aria-label="Previous specification">
+                <span aria-hidden="true">←</span>
+              </button>
+
+              <div
+                class="catalog__track"
+                data-catalog-track
+                tabindex="0"
+                role="list"
+                aria-label="Specification cards"
+              >
+                <article class="spec-card" role="listitem">
+                  <h3>Mass target</h3>
+                  <p>Approximately 180 g in 27.2 × 350 mm (finish dependent).</p>
+                </article>
+                <article class="spec-card" role="listitem">
+                  <h3>Diameters</h3>
+                  <p>27.2 mm and 31.6 mm common standards, with length options for race and endurance builds.</p>
+                </article>
+                <article class="spec-card" role="listitem">
+                  <h3>Clamp</h3>
+                  <p>Two-bolt forged cradle with side micro-adjust for precise saddle pitch.</p>
+                </article>
+                <article class="spec-card" role="listitem">
+                  <h3>Weave</h3>
+                  <p>Visible 3K twill under satin clear coat — structure you can read.</p>
+                </article>
+                <article class="spec-card" role="listitem">
+                  <h3>Interface</h3>
+                  <p>Compatible with standard seat tubes; install with carbon assembly paste.</p>
+                </article>
+                <article class="spec-card" role="listitem">
+                  <h3>Fit guide</h3>
+                  <p>Tell us your frame standard and saddle rails — we’ll confirm the right STRIA build.</p>
+                  <a class="spec-card__cta" href="mailto:fit@stria.example?subject=STRIA%20fit%20guide">Request fit guide</a>
+                </article>
+              </div>
+
+              <button class="catalog__nav catalog__nav--next" type="button" data-catalog-next aria-label="Next specification">
+                <span aria-hidden="true">→</span>
+              </button>
+            </div>
+
+            <p class="catalog__status" data-catalog-status aria-live="polite">1 / 6</p>
+          </section>
+        </div>
+      </section>
+
+      <section class="reduced-flow" data-reduced-flow hidden>
+        <div class="reduced-flow__inner">
+          <header>
+            <p class="brand-lockup">STRIA</p>
+            <h2>Carbon fibre seatpost</h2>
+            <p>
+              A precision 3K weave seatpost with machined clamp geometry. Motion is reduced on this device preference —
+              the full story remains below.
+            </p>
+          </header>
+          <figure>
+            <img
+              src="public/assets/30-hero-rod.webp"
+              alt="Isolated STRIA carbon fibre seatpost"
+              width="800"
+              height="800"
+            />
+          </figure>
+          <article>
+            <h3>Clamp geometry</h3>
+            <p>Two-bolt rail cradle, machined head, and a side adjuster for honest saddle angle under load.</p>
+          </article>
+          <article>
+            <h3>3K weave</h3>
+            <p>Aligned carbon under satin resin — hollow tube, sealed end plug, continuous weave.</p>
+          </article>
+          <figure>
+            <img
+              src="public/assets/35-exploded.webp"
+              alt="Exploded seatpost components"
+              width="800"
+              height="800"
+            />
+          </figure>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="scripts/main.js"></script>
+  </body>
+</html>
