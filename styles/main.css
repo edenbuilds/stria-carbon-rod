@@ -200,14 +200,14 @@ a {
 .layer--photo {
   display: grid;
   place-items: center;
-  padding: clamp(1rem, 4vw, 3rem);
+  padding: 0;
 }
 
 .layer--photo picture,
 .layer--photo img {
-  width: min(78vw, 720px);
+  width: min(92vw, 980px);
   height: auto;
-  max-height: min(78svh, 820px);
+  max-height: min(88svh, 940px);
   object-fit: contain;
 }
 
@@ -223,9 +223,16 @@ a {
   transform-origin: 48% 42%;
 }
 
+.layer--context {
+  align-items: end;
+  justify-items: end;
+  padding: 0 0 clamp(2rem, 8vh, 5rem) 0;
+}
+
 .layer--context img {
-  width: min(88vw, 920px);
-  max-height: min(82svh, 860px);
+  width: min(100vw, 1180px);
+  max-height: min(92svh, 980px);
+  margin-right: clamp(-4vw, -2vw, 0px);
 }
 
 .layer--hero {
@@ -332,7 +339,7 @@ a {
   letter-spacing: 0.02em;
   padding: 0.55rem 0.9rem;
   border: 1px solid rgba(18, 20, 23, 0.18);
-  border-radius: 999px;
+  border-radius: var(--radius);
   color: var(--ink);
 }
 
@@ -538,7 +545,7 @@ a {
   display: inline-flex;
   margin-top: 0.95rem;
   padding: 0.55rem 0.85rem;
-  border-radius: 999px;
+  border-radius: var(--radius);
   background: var(--ink);
   color: var(--paper);
   text-decoration: none;
@@ -549,7 +556,7 @@ a {
 .catalog__nav {
   width: 2.5rem;
   height: 2.5rem;
-  border-radius: 50%;
+  border-radius: var(--radius);
   border: 1px solid rgba(18, 20, 23, 0.16);
   background: rgba(255, 255, 255, 0.7);
   opacity: var(--catalog-controls);
@@ -596,14 +603,15 @@ a {
 
   .intro {
     left: clamp(2rem, 7vw, 6rem);
+    max-width: min(30rem, 36vw);
   }
 
   .layer--photo img {
-    width: min(58vw, 680px);
+    width: min(62vw, 760px);
   }
 
   .layer--context img {
-    width: min(68vw, 900px);
+    width: min(72vw, 1100px);
   }
 }
 
@@ -612,10 +620,30 @@ a {
     height: calc(var(--stage-min) + 3200px);
   }
 
+  .intro .brand-lockup {
+    display: none;
+  }
+
   .intro {
     top: auto;
-    bottom: 18%;
+    bottom: 14%;
     transform: translate3d(0, var(--intro-y), 0);
+    background: linear-gradient(180deg, transparent, rgba(232, 236, 240, 0.92) 28%);
+    padding-top: 2rem;
+    max-width: calc(100vw - 2rem);
+  }
+
+  .layer--context {
+    align-items: center;
+    justify-items: center;
+    padding: 4.5rem 0 32vh;
+  }
+
+  .layer--context img {
+    width: min(118vw, 720px);
+    max-height: 58svh;
+    margin: 0;
+    object-position: 55% 40%;
   }
 
   .narrative {
