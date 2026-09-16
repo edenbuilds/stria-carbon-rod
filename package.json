@@ -5,6 +5,7 @@
   "description": "Cinematic scroll microsite for the STRIA carbon fibre seatpost",
   "scripts": {
     "start": "npx --yes serve -l 4173 .",
-    "dev": "npm start"
+    "dev": "npm start",
+    "build": "node -e \"console.log('Static site — no build step')\""
   }
 }
