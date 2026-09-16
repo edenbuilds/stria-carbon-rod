@@ -214,6 +214,9 @@ a {
 .layer--context {
   z-index: 4;
   opacity: var(--context-o);
+  align-items: end;
+  justify-items: end;
+  padding: 0 0 clamp(2rem, 8vh, 5rem) 0;
   transform: translate3d(
       calc(var(--context-x) + var(--ptr-x) * 10px),
       calc(var(--context-y) + var(--ptr-y) * 8px),
@@ -221,12 +224,6 @@ a {
     )
     scale(var(--context-scale));
   transform-origin: 48% 42%;
-}
-
-.layer--context {
-  align-items: end;
-  justify-items: end;
-  padding: 0 0 clamp(2rem, 8vh, 5rem) 0;
 }
 
 .layer--context img {
