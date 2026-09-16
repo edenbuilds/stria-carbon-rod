@@ -51,7 +51,7 @@ export default function App() {
 
       gsap.set(media, { scale: 0.82, y: 64, opacity: 0.25 })
       gsap.set(caption, { y: 32, opacity: 0 })
-      if (hint) gsap.set(hint, { opacity: 1 })
+      if (hint) gsap.set(hint, { autoAlpha: 1 })
 
       const tl = gsap.timeline({
         scrollTrigger: {
@@ -69,7 +69,7 @@ export default function App() {
         .to(caption, { y: 0, opacity: 1, ease: 'none', duration: 0.3 }, 0.28)
 
       if (hint) {
-        tl.to(hint, { opacity: 0, ease: 'none', duration: 0.25 }, 0.35)
+        tl.to(hint, { autoAlpha: 0, ease: 'none', duration: 0.2 }, 0.7)
       }
 
       tl.to(media, { scale: 1.06, y: -16, ease: 'none', duration: 0.5 }, 0.5)
