@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -7,11 +7,13 @@ import './App.css'
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
 
-const ASSETS = {
-  bike: { webp: '/assets/20-context-bike.webp', jpg: '/assets/20-context-bike.jpg' },
-  rod: { webp: '/assets/30-hero-rod.webp', jpg: '/assets/30-hero-rod.jpg' },
-  exploded: { webp: '/assets/35-exploded.webp', jpg: '/assets/35-exploded.jpg' },
+const FRAME_COUNT = 104
+const BIKE = {
+  webp: '/assets/20-context-bike.webp',
+  jpg: '/assets/20-context-bike.jpg',
 }
+
+const frameSrc = (i) => `/assets/frames/frame-${String(i).padStart(3, '0')}.jpg`
 
 function GhostButton({ href, children, className = '' }) {
   return (
@@ -40,10 +42,16 @@ function Loader({ progress, done }) {
           aria-busy="true"
         >
           <p className="loader__mark">COMPOSITE SPEED®</p>
-          <div className="loader__track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)}>
+          <div
+            className="loader__track"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(progress)}
+          >
             <div className="loader__bar" style={{ width: `${progress}%` }} />
           </div>
-          <p className="loader__copy">Loading product assets… {Math.round(progress)}%</p>
+          <p className="loader__copy">Loading frame sequence… {Math.round(progress)}%</p>
         </motion.div>
       )}
     </AnimatePresence>
@@ -54,111 +62,159 @@ export default function App() {
   const reduceMotion = useReducedMotion()
   const [loadProgress, setLoadProgress] = useState(0)
   const [assetsReady, setAssetsReady] = useState(false)
+  const [frameIndex, setFrameIndex] = useState(1)
 
-  const explodeRef = useRef(null)
-  const assembledRef = useRef(null)
-  const explodedRef = useRef(null)
-  const labelARef = useRef(null)
-  const labelBRef = useRef(null)
-  const labelCRef = useRef(null)
+  const framesRef = useRef([])
+  const scrubRef = useRef(null)
+  const canvasRef = useRef(null)
   const hintRef = useRef(null)
-  const stageBgRef = useRef(null)
+  const labelRef = useRef(null)
+  const progressObj = useRef({ frame: 1 })
+
+  const frameUrls = useMemo(
+    () => Array.from({ length: FRAME_COUNT }, (_, i) => frameSrc(i + 1)),
+    [],
+  )
+
+  const drawFrame = (index) => {
+    const canvas = canvasRef.current
+    const frames = framesRef.current
+    if (!canvas || !frames.length) return
+    const img = frames[index - 1]
+    if (!img || !img.complete) return
+
+    const ctx = canvas.getContext('2d')
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    const cssW = canvas.clientWidth
+    const cssH = canvas.clientHeight
+    if (cssW < 2 || cssH < 2) return
+
+    if (canvas.width !== Math.floor(cssW * dpr) || canvas.height !== Math.floor(cssH * dpr)) {
+      canvas.width = Math.floor(cssW * dpr)
+      canvas.height = Math.floor(cssH * dpr)
+    }
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    ctx.clearRect(0, 0, cssW, cssH)
+
+    const scale = Math.min(cssW / img.naturalWidth, cssH / img.naturalHeight)
+    const w = img.naturalWidth * scale
+    const h = img.naturalHeight * scale
+    const x = (cssW - w) / 2
+    const y = (cssH - h) / 2
+    ctx.drawImage(img, x, y, w, h)
+  }
 
   useEffect(() => {
     let cancelled = false
-    const urls = [
-      ASSETS.bike.webp,
-      ASSETS.rod.webp,
-      ASSETS.exploded.webp,
-    ]
+    const images = []
 
-    const loadOne = (src) =>
+    const loadImage = (src) =>
       new Promise((resolve) => {
         const img = new Image()
-        img.onload = () => resolve(true)
-        img.onerror = () => resolve(false)
+        img.decoding = 'async'
+        img.onload = () => resolve(img)
+        img.onerror = () => resolve(img)
         img.src = src
       })
 
     ;(async () => {
+      // bike first for hero, then frames in batches
+      await loadImage(BIKE.webp)
+      if (cancelled) return
+      setLoadProgress(4)
+
+      const total = frameUrls.length
       let done = 0
-      for (const url of urls) {
-        await loadOne(url)
-        done += 1
-        if (!cancelled) setLoadProgress((done / urls.length) * 100)
+      const batch = 8
+      for (let i = 0; i < total; i += batch) {
+        const slice = frameUrls.slice(i, i + batch)
+        const loaded = await Promise.all(slice.map(loadImage))
+        images.push(...loaded)
+        done = Math.min(total, i + slice.length)
+        if (!cancelled) setLoadProgress(4 + (done / total) * 96)
       }
-      if (!cancelled) {
-        setLoadProgress(100)
-        window.setTimeout(() => setAssetsReady(true), 280)
-      }
+
+      if (cancelled) return
+      framesRef.current = images
+      setLoadProgress(100)
+      window.setTimeout(() => {
+        if (!cancelled) {
+          setAssetsReady(true)
+          drawFrame(1)
+        }
+      }, 220)
     })()
 
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [frameUrls])
 
   useGSAP(
     () => {
       if (reduceMotion || !assetsReady) return
+      const stage = scrubRef.current
+      if (!stage) return
 
-      const stage = explodeRef.current
-      const assembled = assembledRef.current
-      const exploded = explodedRef.current
-      const hint = hintRef.current
-      const bg = stageBgRef.current
-      if (!stage || !assembled || !exploded) return
-
-      gsap.set(assembled, { opacity: 0, scale: 0.88, y: 40 })
-      gsap.set(exploded, { opacity: 0, scale: 0.96, y: 24 })
-      gsap.set([labelARef.current, labelBRef.current, labelCRef.current], { opacity: 0, y: 16 })
-      if (hint) gsap.set(hint, { autoAlpha: 1 })
-      if (bg) gsap.set(bg, { backgroundColor: '#111111' })
+      progressObj.current.frame = 1
+      if (hintRef.current) gsap.set(hintRef.current, { autoAlpha: 1 })
+      if (labelRef.current) gsap.set(labelRef.current, { autoAlpha: 0, y: 12 })
 
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: stage,
           start: 'top top',
-          end: '+=3200',
+          end: '+=3600',
           pin: true,
-          scrub: 1.2,
+          scrub: 1.1,
           anticipatePin: 1,
           invalidateOnRefresh: true,
+          onUpdate: () => drawFrame(Math.round(progressObj.current.frame)),
         },
       })
 
-      // Beat 1: studio reveal + assembled rod
-      tl.to(bg, { backgroundColor: '#f4f4f4', ease: 'none', duration: 0.2 }, 0)
-        .to(assembled, { opacity: 1, scale: 1, y: 0, ease: 'none', duration: 0.22 }, 0.08)
-        .to(hint, { autoAlpha: 0, ease: 'none', duration: 0.12 }, 0.18)
+      tl.to(
+        progressObj.current,
+        {
+          frame: FRAME_COUNT,
+          ease: 'none',
+          duration: 1,
+          onUpdate: () => {
+            const f = Math.round(progressObj.current.frame)
+            setFrameIndex(f)
+            drawFrame(f)
+          },
+        },
+        0,
+      )
 
-      // Beat 2: hold assembled + first callout
-      tl.to(labelARef.current, { opacity: 1, y: 0, ease: 'none', duration: 0.12 }, 0.28)
+      if (hintRef.current) {
+        tl.to(hintRef.current, { autoAlpha: 0, duration: 0.12, ease: 'none' }, 0.08)
+      }
+      if (labelRef.current) {
+        tl.to(labelRef.current, { autoAlpha: 1, y: 0, duration: 0.15, ease: 'none' }, 0.2)
+      }
 
-      // Beat 3–5: crossfade to exploded engineering view
-      tl.to(assembled, { opacity: 0, scale: 0.94, y: -20, ease: 'none', duration: 0.22 }, 0.42)
-        .to(exploded, { opacity: 1, scale: 1, y: 0, ease: 'none', duration: 0.24 }, 0.44)
-        .to(labelARef.current, { opacity: 0, y: -10, ease: 'none', duration: 0.1 }, 0.46)
-        .to(labelBRef.current, { opacity: 1, y: 0, ease: 'none', duration: 0.12 }, 0.55)
-        .to(labelCRef.current, { opacity: 1, y: 0, ease: 'none', duration: 0.12 }, 0.68)
-
-      // Beat 6: slight push into exploded detail
-      tl.to(exploded, { scale: 1.06, y: -12, ease: 'none', duration: 0.22 }, 0.78)
+      const onResize = () => {
+        drawFrame(Math.round(progressObj.current.frame))
+        ScrollTrigger.refresh()
+      }
+      window.addEventListener('resize', onResize)
 
       return () => {
+        window.removeEventListener('resize', onResize)
         tl.scrollTrigger?.kill()
         tl.kill()
       }
     },
-    { dependencies: [reduceMotion, assetsReady], revertOnUpdate: true },
+    { dependencies: [assetsReady, reduceMotion], revertOnUpdate: true },
   )
 
   useEffect(() => {
     if (!assetsReady) return
-    const onResize = () => ScrollTrigger.refresh()
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
-  }, [assetsReady])
+    drawFrame(reduceMotion ? FRAME_COUNT : 1)
+  }, [assetsReady, reduceMotion])
 
   return (
     <>
@@ -174,9 +230,9 @@ export default function App() {
             COMPOSITE SPEED®
           </a>
           <nav className="site-nav" aria-label="Primary">
-            <a href="#engineering">Engineering</a>
+            <a href="#material">Material</a>
+            <a href="#build">Build</a>
             <a href="#benefits">Benefits</a>
-            <a href="#explode">Build</a>
           </nav>
           <GhostButton href="#fit">Fit guide</GhostButton>
         </div>
@@ -192,7 +248,7 @@ export default function App() {
                 A 3K carbon fibre rod engineered for stiffness, mass reduction, and stable saddle control.
               </p>
               <div className="hero__actions">
-                <GhostButton href="#explode">Inspect the build</GhostButton>
+                <GhostButton href="#build">Inspect the build</GhostButton>
                 <a className="text-link" href="#benefits">
                   Cyclist benefits →
                 </a>
@@ -200,9 +256,9 @@ export default function App() {
             </div>
             <figure className="hero__media">
               <picture>
-                <source srcSet={ASSETS.bike.webp} type="image/webp" />
+                <source srcSet={BIKE.webp} type="image/webp" />
                 <img
-                  src={ASSETS.bike.jpg}
+                  src={BIKE.jpg}
                   alt="Composite Speed carbon fibre seatpost mounted on a road bike"
                   width="1800"
                   height="1500"
@@ -213,68 +269,45 @@ export default function App() {
           </div>
         </section>
 
-        <section className="explode-stage" id="explode" ref={explodeRef} aria-label="Seatpost engineering scrub">
-          <div className="explode-stage__bg" ref={stageBgRef} />
-          <div className="explode-stage__inner shell">
-            <p className="scrub-hint" ref={hintRef}>
-              Scroll to scrub ↓
-            </p>
-
-            <div className="explode-stack">
-              <div className="explode-media" ref={assembledRef}>
-                <picture>
-                  <source srcSet={ASSETS.rod.webp} type="image/webp" />
-                  <img
-                    src={ASSETS.rod.jpg}
-                    alt="Assembled Composite Speed carbon fibre seatpost"
-                    width="1600"
-                    height="1600"
-                  />
-                </picture>
-              </div>
-              <div className="explode-media explode-media--exploded" ref={explodedRef}>
-                <picture>
-                  <source srcSet={ASSETS.exploded.webp} type="image/webp" />
-                  <img
-                    src={ASSETS.exploded.jpg}
-                    alt="Exploded seatpost: bolts, clamp plates, carbon tube, end plug"
-                    width="1600"
-                    height="1600"
-                  />
-                </picture>
-              </div>
+        <section className="band" id="material">
+          <div className="shell two-col">
+            <p className="caption">Below the hero</p>
+            <div>
+              <h2 className="heading">What you are looking at</h2>
+              <p className="body">
+                The product is a hollow 3K carbon fibre seatpost rod with a machined clamp head. Fibre
+                orientation is set for axial and bending stiffness at the seat-tube interface. The
+                sequence below scrubs the full assembly: from the finished post to an exploded view of
+                bolts, clamp plates, washers, tube, and end plug.
+              </p>
+              <ul className="meta-list">
+                <li>3K twill carbon shaft under clear coat</li>
+                <li>Two-bolt rail cradle with side micro-adjust</li>
+                <li>Target mass ~180 g (27.2 × 350 mm, finish dependent)</li>
+              </ul>
             </div>
-
-            <aside className="explode-labels" aria-live="polite">
-              <p className="explode-label" ref={labelARef}>
-                <span>01</span> Assembled post — clamp head bonded to 3K carbon tube
-              </p>
-              <p className="explode-label" ref={labelBRef}>
-                <span>02</span> Two-bolt cradle + washers — rail clamp torque path
-              </p>
-              <p className="explode-label" ref={labelCRef}>
-                <span>03</span> Hollow carbon shaft + ribbed end plug — sealed tube
-              </p>
-            </aside>
           </div>
         </section>
 
-        <section className="band" id="engineering">
-          <div className="shell two-col">
-            <p className="caption">Material system</p>
-            <div>
-              <h2 className="heading">3K twill carbon fibre rod</h2>
-              <p className="body">
-                The shaft is a hollow 3K carbon fibre tube under a clear resin coat. Fibre orientation is
-                set for hoop and axial load around the seat-tube interface. Compared with alloy posts of
-                the same diameter, the composite layup cuts mass while keeping bending stiffness in the
-                primary load plane.
+        <section className="scrub-stage" id="build" ref={scrubRef} aria-label="Seatpost frame scrub">
+          <div className="scrub-stage__inner shell">
+            <p className="scrub-hint" ref={hintRef}>
+              Scroll to scrub ↓
+            </p>
+            <canvas
+              className="scrub-canvas"
+              ref={canvasRef}
+              role="img"
+              aria-label="Composite Speed seatpost assembly sequence"
+            />
+            <div className="scrub-meta" ref={labelRef}>
+              <p className="caption">Build sequence</p>
+              <p className="scrub-frame">
+                Frame {String(frameIndex).padStart(3, '0')} / {FRAME_COUNT}
               </p>
-              <ul className="meta-list">
-                <li>3K twill weave — inspectable fibre continuity</li>
-                <li>Hollow tube with sealed end plug</li>
-                <li>Common diameters: 27.2 mm and 31.6 mm</li>
-              </ul>
+              <p className="body scrub-note">
+                Assembled post → clamp hardware → exploded carbon tube. Scrub maps 1:1 to scroll.
+              </p>
             </div>
           </div>
         </section>
@@ -283,35 +316,34 @@ export default function App() {
           <div className="shell two-col">
             <p className="caption">Cyclist impact</p>
             <div>
-              <h2 className="heading">What the engineering changes on the bike</h2>
+              <h2 className="heading">Engineering effects on the bike</h2>
               <div className="benefit-grid">
                 <article>
                   <h3 className="heading-sm">Power transfer</h3>
                   <p className="body">
-                    High axial and bending stiffness limits post flex under seated sprint loads, so more
-                    rider input stays at the pedals instead of dissipating in the seatpost.
+                    High bending stiffness limits seatpost flex under seated sprint loads, so more rider
+                    input stays at the drivetrain.
                   </p>
                 </article>
                 <article>
                   <h3 className="heading-sm">Mass budget</h3>
                   <p className="body">
-                    Target mass is about 180 g in 27.2 × 350 mm (finish dependent). That weight comes off
-                    a high point on the frame, which helps climbing and bike handling response.
+                    Carbon replaces alloy in a high point on the bike. Lower rotating and climbing mass
+                    without changing frame geometry.
                   </p>
                 </article>
                 <article>
-                  <h3 className="heading-sm">Fatigue over distance</h3>
+                  <h3 className="heading-sm">Vibration load</h3>
                   <p className="body">
-                    Carbon’s damping characteristics reduce high-frequency road vibration transmitted
-                    through the saddle, which lowers cumulative fatigue on long rides without adding
-                    elastomer parts.
+                    Composite damping reduces high-frequency road input through the saddle, cutting
+                    cumulative fatigue on long rides.
                   </p>
                 </article>
                 <article>
-                  <h3 className="heading-sm">Saddle stability</h3>
+                  <h3 className="heading-sm">Saddle lock</h3>
                   <p className="body">
-                    The two-bolt forged cradle and side micro-adjust hold rail pitch under load, so
-                    saddle angle set at install stays consistent through climbing and braking.
+                    Two-bolt cradle and side adjuster hold rail pitch after install, so set angle stays
+                    consistent under braking and climbing.
                   </p>
                 </article>
               </div>
@@ -321,14 +353,13 @@ export default function App() {
 
         <section className="band">
           <div className="shell two-col">
-            <p className="caption">Interface</p>
+            <p className="caption">Install</p>
             <div>
-              <h2 className="heading">Clamp and install requirements</h2>
+              <h2 className="heading">Interface requirements</h2>
               <p className="body">
-                Use carbon assembly paste at the seat-tube interface and torque the clamp to the frame
-                manufacturer’s specification. Do not exceed the marked minimum insertion depth. The
-                post is compatible with standard seat tubes in 27.2 and 31.6; confirm length against
-                your stack and setback before cutting.
+                Use carbon assembly paste at the seat tube. Torque the frame clamp to the manufacturer
+                spec. Do not go below the marked minimum insertion. Available in 27.2 and 31.6 mm —
+                confirm length against stack and setback before cutting.
               </p>
             </div>
           </div>
@@ -340,8 +371,8 @@ export default function App() {
               <p className="caption">Fit guide</p>
               <h2 className="heading">Confirm diameter, length, and rail standard</h2>
               <p className="body">
-                Send frame seat-tube diameter, required post length, and saddle rail type. We will
-                confirm the Composite Speed build that matches your bike.
+                Send seat-tube diameter, required post length, and saddle rail type. We will confirm the
+                Composite Speed build for your bike.
               </p>
             </div>
             <GhostButton href="mailto:fit@compositespeed.example?subject=Composite%20Speed%20fit%20guide">
@@ -355,8 +386,8 @@ export default function App() {
         <div className="shell site-footer__inner">
           <p>COMPOSITE SPEED® carbon fibre seatpost</p>
           <div className="site-footer__links">
-            <a href="#engineering">Engineering</a>
-            <a href="#explode">Build</a>
+            <a href="#material">Material</a>
+            <a href="#build">Build</a>
             <a href="mailto:fit@compositespeed.example">Contact</a>
           </div>
         </div>

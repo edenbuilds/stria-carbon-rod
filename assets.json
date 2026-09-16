@@ -1,16 +1,21 @@
 {
-  "schemaVersion": "1.0",
-  "scene": "stria-carbon-rod",
-  "notes": "Single in-situ bike/seatpost plate. Exploded and isolated rod assets removed per brief.",
+  "schemaVersion": "1.1",
+  "scene": "composite-speed",
+  "notes": "104-frame explode sequence for GSAP canvas scrub. Bike hero plate retained.",
   "layers": [
     {
-      "id": "contextBike",
-      "role": "product-near-cta",
+      "id": "bikeHero",
+      "role": "hero-product",
       "file": "public/assets/20-context-bike.webp",
-      "fallback": "public/assets/20-context-bike.jpg",
-      "width": 1800,
-      "height": 1500,
-      "anchor": "center",
+      "critical": true
+    },
+    {
+      "id": "frameSequence",
+      "role": "scroll-scrub-frames",
+      "path": "public/assets/frames/frame-001.jpg … frame-104.jpg",
+      "count": 104,
+      "width": 1280,
+      "height": 720,
       "critical": true
     }
   ]
