@@ -49,6 +49,7 @@
 
 html {
   scroll-behavior: auto;
+  overscroll-behavior-y: none;
 }
 
 body {
@@ -67,11 +68,6 @@ img {
   display: block;
   max-width: 100%;
   height: auto;
-}
-
-/* Explicit stage images keep a fixed viewport box on mobile */
-img.build-image {
-  height: min(72svh, 620px);
 }
 
 a {

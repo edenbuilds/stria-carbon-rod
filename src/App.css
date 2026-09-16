@@ -200,25 +200,9 @@
   background: var(--color-paper-white);
 }
 
-/* Mobile: tall scroll runway + sticky viewport (avoids GSAP pin blanks on iOS) */
-.build-stage--mobile {
-  min-height: 0;
-  height: 280vh;
-}
-
 .build-stage__sticky {
   position: relative;
   min-height: 100svh;
-}
-
-.build-stage--mobile .build-stage__sticky {
-  position: sticky;
-  top: 0;
-  height: 100svh;
-  min-height: 100svh;
-  display: flex;
-  align-items: center;
-  background: var(--color-paper-white);
 }
 
 .build-stage__inner {
@@ -234,13 +218,7 @@
   padding-block: var(--spacing-32);
 }
 
-.build-stage--mobile .build-stage__inner {
-  min-height: 0;
-  height: 100%;
-  padding-block: var(--spacing-24);
-}
-
-.build-image {
+img.build-image {
   width: min(100%, 1100px);
   height: min(72svh, 620px);
   max-height: min(72svh, 620px);
@@ -248,8 +226,13 @@
   object-fit: contain;
   object-position: center;
   background: transparent;
-  /* Beat global img { height: auto } so the stage never collapses blank */
   max-width: 100%;
+  /* Promote to own layer so src swaps stay smooth on mobile GPUs */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-user-drag: none;
+  user-select: none;
+  pointer-events: none;
 }
 
 .build-caption {
@@ -418,7 +401,7 @@
     gap: var(--spacing-32);
   }
 
-  .build-image {
+  img.build-image {
     height: min(74svh, 640px);
     max-height: min(74svh, 640px);
   }
@@ -468,13 +451,33 @@
     padding-block: 72px;
   }
 
+  /* Sticky runway — shorter than before so scrub feels tighter on touch */
+  .build-stage {
+    min-height: 0;
+    height: 210vh;
+  }
+
+  .build-stage__sticky {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    min-height: 100svh;
+    display: flex;
+    align-items: center;
+    background: var(--color-paper-white);
+    /* Isolate sticky compositing from page scroll jank on iOS */
+    transform: translateZ(0);
+  }
+
   .build-stage__inner {
+    min-height: 0;
+    height: 100%;
     padding-block: var(--spacing-24);
   }
 
-  .build-image {
-    height: min(56svh, 420px);
-    max-height: min(56svh, 420px);
+  img.build-image {
+    height: min(58svh, 440px);
+    max-height: min(58svh, 440px);
     width: 100%;
   }
 

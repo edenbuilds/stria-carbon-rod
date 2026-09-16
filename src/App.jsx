@@ -44,7 +44,7 @@ function Loader({ progress, done }) {
           className="loader"
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.45 }}
+          transition={{ duration: 0.4 }}
           aria-busy="true"
         >
           <p className="loader__mark">COMPOSITE SPEED®</p>
@@ -68,8 +68,8 @@ function loadImage(src) {
   return new Promise((resolve) => {
     const img = new Image()
     img.decoding = 'async'
-    img.onload = () => resolve(true)
-    img.onerror = () => resolve(false)
+    img.onload = () => resolve(img)
+    img.onerror = () => resolve(null)
     img.src = src
   })
 }
@@ -78,47 +78,49 @@ export default function App() {
   const reduceMotion = useReducedMotion()
   const [loadProgress, setLoadProgress] = useState(0)
   const [assetsReady, setAssetsReady] = useState(false)
-  const [activeSrc, setActiveSrc] = useState(frameSrc(1))
-  const [stageCaption, setStageCaption] = useState(captionForFrame(1))
-  const [isMobile, setIsMobile] = useState(false)
 
   const scrubRef = useRef(null)
+  const imgRef = useRef(null)
+  const captionRef = useRef(null)
   const progressObj = useRef({ frame: 1 })
   const lastDrawn = useRef(0)
-  const readyFrames = useRef(new Set([1]))
+  const lastCaption = useRef(captionForFrame(1))
+  const framesRef = useRef(/** @type {(HTMLImageElement | null)[]} */ ([]))
+  const pendingFrame = useRef(1)
+  const rafRef = useRef(0)
 
   const frameUrls = useMemo(
     () => Array.from({ length: FRAME_COUNT }, (_, i) => frameSrc(i + 1)),
     [],
   )
 
-  const showFrame = (index) => {
-    const clamped = Math.max(1, Math.min(FRAME_COUNT, index))
-    // Prefer a loaded frame so mobile never flashes blanks
-    let target = clamped
-    if (!readyFrames.current.has(target)) {
-      let found = 1
-      for (const ready of readyFrames.current) {
-        if (Math.abs(ready - clamped) < Math.abs(found - clamped)) found = ready
-      }
-      target = found
+  // Imperative paint — no React re-render per frame (critical on phones)
+  const paintFrame = (index) => {
+    const clamped = Math.max(1, Math.min(FRAME_COUNT, index | 0))
+    if (clamped === lastDrawn.current) return
+
+    const cached = framesRef.current[clamped - 1]
+    const el = imgRef.current
+    if (!el || !cached?.complete || !cached.naturalWidth) return
+
+    el.src = cached.src
+    lastDrawn.current = clamped
+
+    const cap = captionForFrame(clamped)
+    if (cap !== lastCaption.current && captionRef.current) {
+      lastCaption.current = cap
+      captionRef.current.textContent = cap
     }
-    if (target === lastDrawn.current) {
-      setStageCaption(captionForFrame(clamped))
-      return
-    }
-    lastDrawn.current = target
-    setActiveSrc(frameSrc(target))
-    setStageCaption(captionForFrame(clamped))
   }
 
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 720px)')
-    const sync = () => setIsMobile(mq.matches)
-    sync()
-    mq.addEventListener('change', sync)
-    return () => mq.removeEventListener('change', sync)
-  }, [])
+  const queuePaint = (frame) => {
+    pendingFrame.current = frame
+    if (rafRef.current) return
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = 0
+      paintFrame(Math.round(pendingFrame.current))
+    })
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -126,50 +128,43 @@ export default function App() {
     ;(async () => {
       await loadImage(BIKE.webp)
       if (cancelled) return
-      setLoadProgress(8)
+      setLoadProgress(6)
 
-      // First frame must paint before we reveal — then warm the rest in parallel
-      const firstOk = await loadImage(frameUrls[0])
-      if (cancelled) return
-      if (firstOk) readyFrames.current.add(1)
-      showFrame(1)
-      setLoadProgress(18)
+      // Full preload before scrub — ~2MB total, parallelized
+      const loaded = new Array(FRAME_COUNT)
+      let done = 0
+      const concurrency = 16
 
-      // Warm a small head batch so early scroll is solid
-      const head = frameUrls.slice(1, 12)
-      await Promise.all(
-        head.map(async (src, i) => {
-          const ok = await loadImage(src)
-          if (ok) readyFrames.current.add(i + 2)
-        }),
-      )
-      if (cancelled) return
-      setLoadProgress(42)
-      setAssetsReady(true)
-
-      // Remaining frames in parallel batches (does not block UI)
-      const rest = frameUrls.slice(12)
-      const batchSize = 8
-      for (let i = 0; i < rest.length; i += batchSize) {
+      for (let start = 0; start < FRAME_COUNT; start += concurrency) {
         if (cancelled) return
-        const batch = rest.slice(i, i + batchSize)
-        await Promise.all(
-          batch.map(async (src, j) => {
-            const frameIndex = 13 + i + j
-            const ok = await loadImage(src)
-            if (ok) readyFrames.current.add(frameIndex)
-          }),
-        )
+        const slice = frameUrls.slice(start, start + concurrency)
+        const batch = await Promise.all(slice.map((src) => loadImage(src)))
         if (cancelled) return
-        const done = 12 + Math.min(i + batch.length, rest.length)
-        setLoadProgress(42 + (done / FRAME_COUNT) * 58)
+        batch.forEach((img, j) => {
+          loaded[start + j] = img
+        })
+        done += batch.length
+        setLoadProgress(6 + (done / FRAME_COUNT) * 94)
       }
 
-      if (!cancelled) setLoadProgress(100)
+      if (cancelled) return
+      framesRef.current = loaded
+
+      const first = loaded[0]
+      if (first && imgRef.current) {
+        imgRef.current.src = first.src
+      }
+      lastDrawn.current = 1
+
+      setLoadProgress(100)
+      window.setTimeout(() => {
+        if (!cancelled) setAssetsReady(true)
+      }, 100)
     })()
 
     return () => {
       cancelled = true
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
     }
   }, [frameUrls])
 
@@ -180,19 +175,20 @@ export default function App() {
       if (!stage) return
 
       progressObj.current.frame = 1
-      showFrame(1)
+      paintFrame(1)
 
       const mobile = window.matchMedia('(max-width: 720px)').matches
 
-      // Mobile: CSS sticky section + scrub without pin (pin blanks on iOS)
-      // Desktop: classic pinned scrub
+      // Mobile sticky runway + scrub lag to absorb touch-scroll jitter
+      // Desktop keeps cinematic pin
       const trigger = {
         trigger: stage,
         start: 'top top',
         end: mobile ? 'bottom bottom' : '+=3600',
-        scrub: mobile ? 0.2 : 0.75,
+        scrub: mobile ? 0.6 : 0.85,
         invalidateOnRefresh: true,
         fastScrollEnd: true,
+        preventOverlaps: true,
         ...(mobile
           ? {}
           : {
@@ -209,24 +205,28 @@ export default function App() {
         ease: 'none',
         duration: 1,
         onUpdate: () => {
-          showFrame(Math.round(progressObj.current.frame))
+          queuePaint(progressObj.current.frame)
         },
       })
 
-      const onResize = () => ScrollTrigger.refresh()
-      window.addEventListener('resize', onResize)
+      const refresh = () => ScrollTrigger.refresh()
+      window.addEventListener('resize', refresh)
+      window.visualViewport?.addEventListener('resize', refresh)
+
       requestAnimationFrame(() => {
-        showFrame(1)
+        paintFrame(1)
         ScrollTrigger.refresh()
       })
 
       return () => {
-        window.removeEventListener('resize', onResize)
+        window.removeEventListener('resize', refresh)
+        window.visualViewport?.removeEventListener('resize', refresh)
+        if (rafRef.current) cancelAnimationFrame(rafRef.current)
         tl.scrollTrigger?.kill()
         tl.kill()
       }
     },
-    { dependencies: [assetsReady, reduceMotion, isMobile], revertOnUpdate: true },
+    { dependencies: [assetsReady, reduceMotion], revertOnUpdate: true },
   )
 
   return (
@@ -305,25 +305,23 @@ export default function App() {
           </div>
         </section>
 
-        <section
-          className={`build-stage${isMobile ? ' build-stage--mobile' : ''}`}
-          id="build"
-          ref={scrubRef}
-          aria-label="Seatpost assembly"
-        >
+        <section className="build-stage" id="build" ref={scrubRef} aria-label="Seatpost assembly">
           <div className="build-stage__sticky">
             <div className="build-stage__inner shell">
               <img
+                ref={imgRef}
                 className="build-image"
-                src={activeSrc}
+                src={frameSrc(1)}
                 alt="Composite Speed seatpost assembly"
                 width={1280}
                 height={720}
-                decoding="async"
+                decoding="sync"
                 fetchPriority="high"
                 draggable={false}
               />
-              <p className="build-caption">{stageCaption}</p>
+              <p className="build-caption" ref={captionRef}>
+                Complete seatpost
+              </p>
             </div>
           </div>
         </section>
